@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "canvas": "^3.1.0",
+    "discord.js": "^14.18.0",
+    "node-postgres": "^0.6.2",
+    "pg": "^8.14.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.23.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.23.0"
+  },
+  "scripts": {
+    "start": "node deploy-commands.js && node index.js",
+    "dev": "concurrently \"npm run start\" \"cd ../express/ && npm run start\""
+  }
+}
