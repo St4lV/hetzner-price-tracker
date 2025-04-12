@@ -407,10 +407,10 @@ module.exports = {
 
             if (["FSN", "NBG"].includes(DC_message)) {
                 DC_message += ' 🇩🇪 ';
-                DC_message += ` (${act_sel_service.dc})`;
+                //DC_message += ` (${act_sel_service.dc})`;
             } else if (DC_message === "HEL") {
                 DC_message += ' 🇫🇮 ';
-                DC_message += ` (${act_sel_service.dc})`;
+                //DC_message += ` (${act_sel_service.dc})`;
             } else {
                 DC_message = `No datacenter found ❌`;
             }

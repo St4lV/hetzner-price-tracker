@@ -16,8 +16,7 @@ app.get('/service/get-all', async (req, res) => {
             rams.ram_amount, 
             rams.ram_size_mb, 
             rams.is_ecc,
-            dcs.dc_name AS dc_name, 
-            dcs.region,
+
             JSON_AGG(
                 json_build_object(
                     'id', disks.id,
@@ -30,7 +29,7 @@ app.get('/service/get-all', async (req, res) => {
             FROM services
             JOIN cpus ON services.cpu_id = cpus.id
             JOIN rams ON services.ram_id = rams.id
-            JOIN dcs ON services.dc_id = dcs.id
+            
             LEFT JOIN diskgroup_disks dgd ON services.disk_group_id = dgd.disk_group_id
             LEFT JOIN disks ON dgd.disk_id = disks.id
             LEFT JOIN gpu ON services.gpu_id = gpu.id
@@ -39,13 +38,16 @@ app.get('/service/get-all', async (req, res) => {
                 services.id, 
                 cpus.cpu_name, cpus.cpu_vendor, 
                 rams.ram_total_size_gb, rams.ram_type, rams.ram_amount, rams.ram_size_mb, rams.is_ecc,
-                dcs.dc_name, dcs.region, 
+                
                 gpu.name
         `);
+        //dcs.dc_name AS dc_name, dcs.region,
+        // JOIN dcs ON services.dc_id = dcs.id
+        //dcs.dc_name, dcs.region, 
         const available_services = serviceData.rows.map(row => ({
             cpu_constructor: row.cpu_vendor,
             cpu: row.cpu_name,
-            dc: row.dc_name,
+            //dc: row.dc_name,
             region: row.region,
             ram: `${row.ram_total_size_gb}-${row.ram_type}`,
             ram_count: `${row.ram_amount} x ${row.ram_size_mb}MB`,
