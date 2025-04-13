@@ -1,44 +1,7 @@
 const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
 const { createCanvas } = require('canvas');
 const package = require('../../package.json');
-
-let cache = {
-    services: { data: null, timestamp: 0 }
-};
-const CACHE_DURATION = 1 * 60 * 1000; 
-
-async function getWithCache(key, url) {
-    const now = Date.now();
-    if (cache[key].data && (now - cache[key].timestamp < CACHE_DURATION)) {
-        return cache[key].data;
-    }
-
-    try {
-        const res = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (res.ok) {
-            const json = await res.json();
-            cache[key].data = json.response;
-            cache[key].timestamp = now;
-            return cache[key].data;
-        } else {
-            console.error(`Fetch error (${key}):`, res.status, res.statusText);
-            cache[key].data = null;
-            return null;
-        }
-    } catch (err) {
-        console.error(`Erreur fetch ${key}:`, err);
-        cache[key].data = null;
-        return null;
-    }
-}
-
-async function getAvailableServices() {
-    return getWithCache('services', 'http://localhost:3000/service/get-all');
-}
+const { getAvailableServices } = require('../../cache.js')
 
 const storageFields = Array.from({ length: 4 }, (_, i) => i + 1);
 
@@ -182,7 +145,13 @@ const builder = new SlashCommandBuilder()
             .setDescription('GPU')
             .setRequired(false)
             .setAutocomplete(true)
+    )
+    .addNumberOption(option =>
+        option.setName('results')
+            .setDescription('Number of result pages to display (1 - 100, default:20)')
+            .setRequired(false)
     );
+    
 
 storageFields.forEach(i => {
     builder.addStringOption(option =>
@@ -306,6 +275,7 @@ module.exports = {
         const ram = interaction.options.getString('ram');
         const datacenter = interaction.options.getString('datacenter');
         const gpu = interaction.options.getString('gpu');
+        const results_return_value = interaction.options.getNumber('results') ?? 20;
         const storageValues = storageFields.map(i => interaction.options.getString(`storage${i}`));
     
         const services = await getAvailableServices();
@@ -358,7 +328,8 @@ module.exports = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    hetzner_ids:hetznerIds
+                    hetzner_ids:hetznerIds,
+                    max_services_return:results_return_value
                 })
             });
             const response = await res.json();
@@ -462,8 +433,9 @@ module.exports = {
                 }
                 await i.update(message_send);//editReply
             });
-            
+
             collector.on('end', async () => {
+
             });
         } catch (error){
             console.log(error)

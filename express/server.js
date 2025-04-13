@@ -70,7 +70,9 @@ app.get('/service/get-all', async (req, res) => {
 
 app.post('/service/get-price-hetzner-ids', async (req, res) => {
     const hetzner_ids = req.body.hetzner_ids;
-
+    const { max_services_return } = req.body
+    if (max_services_return<1) max_services_return =1
+    if (max_services_return>100) max_services_return =100
     if (!Array.isArray(hetzner_ids) || hetzner_ids.length === 0 || !hetzner_ids.every(Number.isInteger)) {
         return res.status(400).json({ error: "Invalid hetzner_ids in request body." });
     }
@@ -93,11 +95,11 @@ app.post('/service/get-price-hetzner-ids', async (req, res) => {
         const latestPricesRaw = await Promise.all(priceQueries);
         const latestPrices = latestPricesRaw.filter(p => p.latestPrice !== null);
 
-        const cheapestTen = latestPrices
+        const cheapestServices = latestPrices
             .sort((a, b) => a.latestPrice - b.latestPrice)
-            .slice(0, 10);
+            .slice(0, max_services_return);
 
-        const historyQueries = cheapestTen.map(entry =>
+        const historyQueries = cheapestServices.map(entry =>
             pool.query(
                 `SELECT timestamp, price
                 FROM distinctservicesprices
