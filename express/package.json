@@ -1,6 +1,7 @@
 {
-  "name": "express",
-  "version": "1.0.0",
+  "name": "hetzner-service-tracker-backend",
+  "displayName":"HetznerServiceTrackerBackend",
+  "version": "0.1.4",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",

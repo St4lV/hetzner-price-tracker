@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
 const { createCanvas } = require('canvas');
+const package = require('../../package.json');
 
 let cache = {
     services: { data: null, timestamp: 0 }
@@ -345,11 +346,11 @@ module.exports = {
 
         const hetznerIds = matching.map(s => s.service_id);
         if (hetznerIds.length === 0) {
-            return await interaction.reply({ content: '❌ Nothing found with selected config. \n-# - **HetznerServiceTracker 0.1.4**', flags: MessageFlags.Ephemeral });
+            return await interaction.reply({ content: `❌ Nothing found with selected config. \n-# - **${package.displayName} ${package.version}**`, flags: MessageFlags.Ephemeral });
         }
         const max_entries=550;
         if (hetznerIds.length > max_entries) {
-            return await interaction.reply({ content: `❌ Too much entries, please precise filter.\n-# (${hetznerIds.length}/${max_entries}) \n-# - **HetznerServiceTracker 0.1.4**`, flags: MessageFlags.Ephemeral });
+            return await interaction.reply({ content: `❌ Too much entries, please precise filter.\n-# (${hetznerIds.length}/${max_entries}) \n-# - **${package.displayName} ${package.version}**`, flags: MessageFlags.Ephemeral });
         }
 
         try {
@@ -400,17 +401,16 @@ module.exports = {
             );
 
             const maxDisks= act_sel_service.disks.slice(0, 10);
-            const storage_message = maxDisks.map((disk, i) =>
-                `\n  - ${disk.quantity} x ${disk.capacity_gb} Go ${disk.type.toUpperCase()}`
-                ).join(',');
+            const storage_message = maxDisks.map((disk) => {
+                const sel_disk = disk.type !== 'hdd' ? `SSD (${disk.type})` : 'HDD';
+                return `\n  - ${disk.quantity} x ${disk.capacity_gb} Go ${sel_disk}`;
+            }).join(',');
             DC_message = `${act_sel_service.region}`
 
             if (["FSN", "NBG"].includes(DC_message)) {
                 DC_message += ' 🇩🇪 ';
-                //DC_message += ` (${act_sel_service.dc})`;
             } else if (DC_message === "HEL") {
                 DC_message += ' 🇫🇮 ';
-                //DC_message += ` (${act_sel_service.dc})`;
             } else {
                 DC_message = `No datacenter found ❌`;
             }
@@ -427,7 +427,7 @@ module.exports = {
             let message_send={
                 files: [attachment],
                 content: 
-                `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **HetznerServiceTracker 0.1.4**`,
+                `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
                 components: [getRow(index)],
                 flags: MessageFlags.Ephemeral,
                 withResponse: true
@@ -456,7 +456,7 @@ module.exports = {
                 message_send={
                     files: [attachment],
                     content: 
-                    `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **HetznerServiceTracker 0.1.4**`,
+                    `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
                     components: [getRow(index)],
                     flags: MessageFlags.Ephemeral,
                 }

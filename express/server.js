@@ -18,7 +18,7 @@ app.get('/service/get-all', async (req, res) => {
             rams.is_ecc,
 
             JSON_AGG(
-                json_build_object(
+            DISTINCT jsonb_build_object(
                     'id', disks.id,
                     'capacity_gb', disks.capacity_gb,
                     'type', disks.type,
