@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
-const { RemoveAlert } = require("../../mongo/mongo-db-connect.js");
+const { RemoveAlert } = require('../../mongo/mongo-db-connect.js');
 
 
 const builder = new SlashCommandBuilder()

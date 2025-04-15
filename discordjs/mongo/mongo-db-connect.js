@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { mongo_host , mongo_port , mongo_db} = require('../config.json');
 const Joi = require('joi');
+const package = require('../package.json');
+
 const connectDB = async () => {
   try {
     const url = `${mongo_host}:${mongo_port}/${mongo_db}`
@@ -114,4 +116,60 @@ async function RemoveAlert(req) {
   }
 }
 
-module.exports = { connectDB, UpdateAlert, RemoveAlert };
+async function SendAlerts() {
+  try {
+    const services = await ServiceAlert.find({}, { service_id: 1, _id: 0 });
+    const serviceIds = services.map(service => service.service_id);
+    const res = await fetch('http://localhost:3000/service/get-price-latest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service_ids: serviceIds })
+    });
+
+    if (!res.ok) {
+      return;
+    }
+
+    const latestPrices = await res.json();
+    const { client } = require('../index');
+
+    for (const item of latestPrices.response) {
+      const service = await ServiceAlert.findOne({ service_id: item.id });
+
+      if (!service || !Array.isArray(service.alerts)) continue;
+
+      let modified = false;
+
+      for (const alert of service.alerts) {
+        if (alert.price >= item.latestPrice) {
+          if (alert.send !== true && Array.isArray(alert.user_subscribed)) {
+            for (const userId of alert.user_subscribed) {
+              try {
+                const user = await client.users.fetch(userId.toString());
+                await user.send(`-# 🔔 * **Alert** message to **${user.tag}*** 🔔\n 🐀📢 Alert for service **${item.id} ↘️ ${alert.price}€**\n Actual price **${item.latestPrice}€**.\n-# - **${package.displayName} ${package.version}**`);
+              } catch (err) {
+                console.error(`Error with message send to ${user.tag} (${userId}) :`, err);
+              }
+            }
+            alert.send = true;
+            modified = true;
+          }
+        } else if (alert.price < item.latestPrice && alert.send === true) {
+          alert.send = false;
+          modified = true;
+        }
+      }
+      if (modified) {
+        try {
+          await service.save();
+        } catch (err) {
+          console.error(`Error with service ${item.id}:`, err);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error :", error);
+  }
+}
+
+module.exports = { connectDB, UpdateAlert, RemoveAlert, SendAlerts };

@@ -3,11 +3,12 @@ const path = require('node:path');
 var cron = require('node-cron');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
 const { token } = require('./config.json');
-const { connectDB } = require("./mongo/mongo-db-connect");
+const package = require('./package.json');
+const { connectDB , SendAlerts } = require("./mongo/mongo-db-connect");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.once(Events.ClientReady, readyClient => {
-	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+	console.log(`Ready! Logged in as ${readyClient.user.tag} \n### ${package.displayName} ${package.version} ###`);
 });
 client.login(token)
 
@@ -76,7 +77,8 @@ client.on(Events.InteractionCreate, async interaction => {
 		return;
 	}
 });
-
 cron.schedule('*/5 * * * *', () => {
-	console.log('latest price alert script');
-});
+	SendAlerts();
+})
+
+module.exports = { client };
