@@ -1,9 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
-
-
+var cron = require('node-cron');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
 const { token } = require('./config.json');
+const { connectDB } = require("./mongo/mongo-db-connect");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.once(Events.ClientReady, readyClient => {
@@ -12,7 +12,6 @@ client.once(Events.ClientReady, readyClient => {
 client.login(token)
 
 client.commands = new Collection();
-
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -30,7 +29,7 @@ for (const folder of commandFolders) {
 		}
 	}
 }
-
+connectDB();
 
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -49,12 +48,12 @@ client.on(Events.InteractionCreate, async interaction => {
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp({
 					content: 'There was an error while executing this command!',
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			} else {
 				await interaction.reply({
 					content: 'There was an error while executing this command!',
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 		}
@@ -76,4 +75,8 @@ client.on(Events.InteractionCreate, async interaction => {
 		}
 		return;
 	}
+});
+
+cron.schedule('*/5 * * * *', () => {
+	console.log('latest price alert script');
 });

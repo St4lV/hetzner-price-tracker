@@ -1,11 +1,11 @@
-const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
-const { UpdateAlert } = require("../../mongo/mongo-db-connect");
+const { RemoveAlert } = require("../../mongo/mongo-db-connect.js");
 
 
 const builder = new SlashCommandBuilder()
-    .setName('set-alert')
+    .setName('remove-alert')
     .setDescription('Provides the most recent service information for a given component ID.')
     .addNumberOption(option =>
         option.setName('service_id')
@@ -51,13 +51,9 @@ module.exports = {
         const foundService = services.find(s => s.service_id === service_id);
         if (!foundService) return await interaction.reply({ content: `❌ Service not found. \n-# - **${package.displayName} ${package.version}**`, flags: MessageFlags.Ephemeral });
         
-        
-
-
-
         const set_alert_msg = {
             content: 
-            `-# Alert configuration for service ${service_id}:\n 🔔 **New Alert set ** 🔔\n- Service **${service_id}**\n- ↘️ **${service_price}€**\n-# - **${package.displayName} ${package.version}**`,
+            `-# Alert configuration for service ${service_id}:\n 🔔 **❌ Alert removed successfully ** 🔔\n- Service **${service_id}**\n- ↘️ **${service_price}€**\n-# - **${package.displayName} ${package.version}**`,
             flags: MessageFlags.Ephemeral
         }
         const req = {
@@ -67,11 +63,11 @@ module.exports = {
                 alert_price : service_price
             }
         }
-        const response = await UpdateAlert(req);//console.log(response)
-        if (response.error) return await interaction.reply({ content: `❌ Update failed. \n-# - **${package.displayName} ${package.version}**`, flags: MessageFlags.Ephemeral });
-        if (response.update) return await interaction.reply({
+        const response = await RemoveAlert(req);//console.log(response)
+        if (response.error) return await interaction.reply({ content: `❌ Suppression failed. \n-# - **${package.displayName} ${package.version}**`, flags: MessageFlags.Ephemeral });
+        if (response.no_alert) return await interaction.reply({
             content: 
-            `-# Alert configuration for service ${service_id}:\n 🔔 **Updated Alert ** 🔔\n- Service **${service_id}**\n- ↘️ **${service_price}€**\n-# - **${package.displayName} ${package.version}**`,
+           `❌ User not assigned to alert. \n-# - **${package.displayName} ${package.version}**`,
             flags: MessageFlags.Ephemeral
         });
         if (response.response) return await interaction.reply(set_alert_msg);
