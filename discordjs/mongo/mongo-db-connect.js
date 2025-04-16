@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-const { mongo_host , mongo_port , mongo_db} = require('../config.json');
+const { mongo_host , mongo_port , mongo_db, backend_address} = require('../config.json');
 const Joi = require('joi');
 const package = require('../package.json');
-const { backend_address } = require('../config.json');
+const { ActionRowBuilder , ButtonBuilder , ButtonStyle } = require('discord.js');
 
 const connectDB = async () => {
   try {
@@ -144,7 +144,6 @@ async function SendAlerts() {
       if (!service || !Array.isArray(service.alerts)) continue;
 
       let modified = false;
-
       for (const alert of service.alerts) {
         if (alert.price >= item.latestPrice) {
           if (alert.send !== true && Array.isArray(alert.user_subscribed)) {
@@ -152,8 +151,15 @@ async function SendAlerts() {
               let userTag
               try {
                 const user = await client.users.fetch(userId.toString());
+                const buttonUnsubscribe = new ButtonBuilder()
+                .setCustomId(`unsubscribe_user:${item.id}:${alert.price}`)
+                .setLabel('❌ Remove Alert')
+                .setStyle(ButtonStyle.Secondary);
                 userTag = user.tag;
-                await user.send(`-# 🔔 * **Alert** message to **${user.tag}*** 🔔\n 🐀📢 Alert for service **${item.id} ↘️ ${alert.price}€**\n Actual price **${item.latestPrice}€**.\n-# - **${package.displayName} ${package.version}**`);
+                await user.send({
+                  content: `-# 🔔 * **Alert** message to **${user.tag}*** 🔔\n 🐀📢 Alert for service **${item.id} ↘️ ${alert.price}€**\n Actual price **${item.latestPrice}€**.\n-# - **${package.displayName} ${package.version}**`,
+                  components: [new ActionRowBuilder().addComponents(buttonUnsubscribe)]
+                });
               } catch (err) {
                 console.error(`Error with message send to ${userTag} (${userId}) :`, err);
               }

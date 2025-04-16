@@ -4,7 +4,7 @@ var cron = require('node-cron');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
 const { token } = require('./config.json');
 const package = require('./package.json');
-const { connectDB , SendAlerts } = require("./mongo/mongo-db-connect");
+const { connectDB , SendAlerts, RemoveAlert } = require("./mongo/mongo-db-connect");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.once(Events.ClientReady, readyClient => {
@@ -76,7 +76,35 @@ client.on(Events.InteractionCreate, async interaction => {
 		}
 		return;
 	}
+
+	if (interaction.customId.startsWith('unsubscribe_user:')) {
+		const userId = interaction.user.id;
+		const parts = interaction.customId.split(':');
+		const serviceId = parts[1];
+		const alertPrice = parseFloat(parts[2]);
+		console.log(userId)
+		try {
+		await RemoveAlert({
+			body : {
+			user_id: userId,
+			service_id: serviceId,
+			alert_price: alertPrice }
+		});
+	
+		await interaction.update({
+			content: `✅ Alert removed successfully.`,
+			components: []
+		});
+		} catch (err) {
+		console.error('Erreur dans RemoveAlert :', err);
+		await interaction.update({
+			content: `❌ Error removing alert.`,
+			components: []
+		});
+		}
+	}
 });
+
 cron.schedule('*/5 * * * *', () => {
 	SendAlerts();
 })
