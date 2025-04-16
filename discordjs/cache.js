@@ -1,3 +1,6 @@
+const { backend_address } = require('./config.json');
+
+
 const cache = {};
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
 
@@ -32,7 +35,7 @@ async function getWithCache(key, url) {
     }
 }
 async function getAvailableServices() {
-    return getWithCache('services', 'http://localhost:3000/service/get-all');
+    return getWithCache('services', `${backend_address}/service/get-all`);
 }
 module.exports = {
     getWithCache,

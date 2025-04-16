@@ -1,12 +1,12 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
-const { RemoveAlert } = require('../../mongo/mongo-db-connect.js');
+const { RemoveAlert, getUserAlerts } = require('../../mongo/mongo-db-connect.js');
 
 
 const builder = new SlashCommandBuilder()
     .setName('remove-alert')
-    .setDescription('Provides the most recent service information for a given component ID.')
+    .setDescription('Remove a previous set alert.')
     .addNumberOption(option =>
         option.setName('service_id')
             .setDescription('Service_id')
@@ -17,29 +17,55 @@ const builder = new SlashCommandBuilder()
         option.setName('price')
             .setDescription('Price')
             .setRequired(true)
+            .setAutocomplete(true)
     )
 module.exports = {
     data: builder,
-
     async autocomplete(interaction) {
+        const user_id = interaction.user.id;
+        const req = { body: { user_id } };
+        const user_alerts = await getUserAlerts(req);
+        const alert_service_ids = user_alerts.map(entry => entry.service_id.toString());
         const services = await getAvailableServices();
         const focusedOption = interaction.options.getFocused(true);
-    
         if (focusedOption.name === 'service_id') {
-            const focusedValue = focusedOption.value.toString();
-    
-            const choices = services
-                .filter(s => s.service_id.toString().includes(focusedValue))
-                .slice(0, 25)
-                .map(s => ({
-                    name: `${s.service_id} - ${s.cpu} (${s.region})`,
-                    value: s.service_id
-                }));
-    
-            await interaction.respond(choices);
+        const focusedValue = focusedOption.value.toString();
+        const choices = services
+            .filter(s =>
+            alert_service_ids.includes(s.service_id.toString()) &&
+            s.service_id.toString().includes(focusedValue)
+            )
+            .slice(0, 25)
+            .map(s => ({
+            name: `${s.service_id} - ${s.cpu} (${s.region})`,
+            value: s.service_id
+            }));
+        return await interaction.respond(choices);
         }
-    }
-    ,
+        if (focusedOption.name === 'price') {
+        const focusedValue = focusedOption.value.toString();
+        const selectedServiceId = interaction.options.getNumber('service_id');
+        let prices = [];
+        if (selectedServiceId !== null) {
+            const serviceAlert = user_alerts.find(alert => alert.service_id === selectedServiceId);
+            if (serviceAlert) {
+            prices = serviceAlert.alert_prices;
+            }
+        } else {
+            user_alerts.forEach(alert => {
+            prices.push(...alert.alert_prices);
+            });
+        }
+        const filteredPrices = prices
+            .filter(p => p.toString().includes(focusedValue))
+            .slice(0, 25)
+            .map(p => ({
+            name: `${p}€`,
+            value: p
+            }));
+        return await interaction.respond(filteredPrices);
+        }
+    },
     async execute(interaction) {
         const service_id = interaction.options.getNumber('service_id');
         const service_price = interaction.options.getNumber('price');

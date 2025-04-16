@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { mongo_host , mongo_port , mongo_db} = require('../config.json');
 const Joi = require('joi');
 const package = require('../package.json');
+const { backend_address } = require('../config.json');
 
 const connectDB = async () => {
   try {
@@ -27,6 +28,10 @@ const updateUserAlertSchema = Joi.object({
   user_id: Joi.number().unsafe(),
   service_id: Joi.number().required(),
   alert_price: Joi.number().required()
+});
+
+const getAlertsUserSchema = Joi.object({
+  user_id: Joi.number().unsafe()
 });
 
 async function UpdateAlert(req) {
@@ -120,7 +125,7 @@ async function SendAlerts() {
   try {
     const services = await ServiceAlert.find({}, { service_id: 1, _id: 0 });
     const serviceIds = services.map(service => service.service_id);
-    const res = await fetch('http://localhost:3000/service/get-price-latest', {
+    const res = await fetch(`${backend_address}/service/get-price-latest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ service_ids: serviceIds })
@@ -144,11 +149,13 @@ async function SendAlerts() {
         if (alert.price >= item.latestPrice) {
           if (alert.send !== true && Array.isArray(alert.user_subscribed)) {
             for (const userId of alert.user_subscribed) {
+              let userTag
               try {
                 const user = await client.users.fetch(userId.toString());
+                userTag = user.tag;
                 await user.send(`-# 🔔 * **Alert** message to **${user.tag}*** 🔔\n 🐀📢 Alert for service **${item.id} ↘️ ${alert.price}€**\n Actual price **${item.latestPrice}€**.\n-# - **${package.displayName} ${package.version}**`);
               } catch (err) {
-                console.error(`Error with message send to ${user.tag} (${userId}) :`, err);
+                console.error(`Error with message send to ${userTag} (${userId}) :`, err);
               }
             }
             alert.send = true;
@@ -172,4 +179,34 @@ async function SendAlerts() {
   }
 }
 
-module.exports = { connectDB, UpdateAlert, RemoveAlert, SendAlerts };
+async function getUserAlerts(req) {
+  try {
+    const { error, value } = getAlertsUserSchema.validate(req.body);
+    if (error) {
+      return { error: 'Joi: ' + error.details[0].message };
+    }
+    const userId = BigInt(value.user_id);
+    const services = await ServiceAlert.find({}).lean();
+    const result = services
+      .map(service => {
+        const alert_prices = service.alerts
+          .filter(alert =>
+            alert.user_subscribed.some(subscribedId => BigInt(subscribedId) === userId)
+          )
+          .map(alert => alert.price);
+        if (alert_prices.length === 0) return null;
+        return {
+          service_id: service.service_id,
+          alert_prices
+        };
+      })
+      .filter(item => item !== null);
+    return result;
+
+  } catch (err) {
+    console.error('Error :', err);
+    return [];
+  }
+}
+
+module.exports = { connectDB, UpdateAlert, RemoveAlert, SendAlerts, getUserAlerts };

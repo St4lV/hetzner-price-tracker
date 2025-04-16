@@ -2,6 +2,7 @@ const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, Butt
 const { createCanvas } = require('canvas');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
+const { backend_address} = require('../../config.json');
 
 const storageFields = Array.from({ length: 4 }, (_, i) => i + 1);
 
@@ -27,11 +28,13 @@ function generatePriceChart(result) {
     const prices = history.map(p => parseFloat(p.price));
     const timestamps = history.map(p => new Date(p.timestamp).getTime());
 
-    const minPrice = 0;
+    const rawMin = Math.min(...prices);
+    const minPrice = Math.max(0, Math.floor((rawMin-10) / 10) * 10);
+    
     const maxPrice = Math.ceil(Math.max(...prices) / 10) * 10 + 10;
 
     const minTime = Math.min(...timestamps);
-    const maxTime = Math.max(...timestamps);
+    const maxTime = Date.now();
 
     ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1;
@@ -121,7 +124,7 @@ const lastMinY = margin.top + ((maxPrice - lastMinPrice) / (maxPrice - minPrice)
 
 const builder = new SlashCommandBuilder()
     .setName('find-service')
-    .setDescription('Provides the most recent service information for a given component ID.')
+    .setDescription('Find services based on components provided and return cheapest results.')
     .addStringOption(option =>
         option.setName('cpu')
             .setDescription('CPU')
@@ -324,7 +327,7 @@ module.exports = {
         }
 
         try {
-            const res = await fetch('http://localhost:3000/service/get-price-hetzner-ids', {
+            const res = await fetch(`${backend_address}/service/get-price-hetzner-ids`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -339,22 +342,27 @@ module.exports = {
             function getRow(index) {
                 const buttonPrev = new ButtonBuilder()
                     .setCustomId('previous')
-                    .setLabel('Previous entry')
+                    .setLabel('◀️ Previous entry')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(index === 0);
 
                 const buttonNext = new ButtonBuilder()
                     .setCustomId('next')
-                    .setLabel('Next entry')
+                    .setLabel('Next entry ▶️')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(index >= results.length - 1);
 
+                const buttonSetAlert = new ButtonBuilder()
+                    .setCustomId('set-alert')
+                    .setLabel('🔔Set alert')
+                    .setStyle(ButtonStyle.Secondary)
+
                 if (index === 0) {
-                    return new ActionRowBuilder().addComponents(buttonNext);
+                    return new ActionRowBuilder().addComponents(buttonSetAlert, buttonNext);
                 } else if (index > 0 && index < results.length - 1) {
-                    return new ActionRowBuilder().addComponents(buttonPrev, buttonNext);
+                    return new ActionRowBuilder().addComponents(buttonSetAlert, buttonPrev, buttonNext);
                 } else {
-                    return new ActionRowBuilder().addComponents(buttonPrev);
+                    return new ActionRowBuilder().addComponents(buttonSetAlert, buttonPrev);
                 }
             };
             //console.log(JSON.stringify(response.result[index]))
@@ -387,12 +395,12 @@ module.exports = {
             }
 
             GPU_message = ''
-              if (act_sel_service.gpu) GPU_message = `- **GPU :** ${act_sel_service.gpu}\n`
-              service_specs = `- **CPU :** ${act_sel_service.cpu}\n` +
-              `- **RAM :** ${act_sel_service.ram} *(${act_sel_service.ram_count})*\n` +
-              `- **Storage :** ${storage_message}\n` +
-              `- **Datacenter :** ${DC_message}\n` + `${GPU_message}` +
-              `- **Bandwith :** 1000 mb/s \n`
+            if (act_sel_service.gpu) GPU_message = `- 🖥️  - **GPU :** ${act_sel_service.gpu}\n`
+            service_specs = `- 🔲  - **CPU :** ${act_sel_service.cpu}\n` +
+              `- 📟  - **RAM :** ${act_sel_service.ram} *(${act_sel_service.ram_count})*\n` +
+              `- 💽  - **Storage :** ${storage_message}\n` +
+              `- 🏢  - **Datacenter :** ${DC_message}\n` + `${GPU_message}` +
+              `- 📡  - **Bandwith :** 1000 mb/s \n`
             }
             await actGetServiceData();
             let message_send={
@@ -414,24 +422,33 @@ module.exports = {
             });
             
             collector.on('collect', async i => {
-                if (i.customId === 'next') index++;
-                if (i.customId === 'previous') index--;
-            
-                index = Math.max(0, Math.min(results.length - 1, index));
-                chartBuffer = generatePriceChart(response.result[index]);
-                attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
-                act_sel_service = av_services.find(
-                    service => service.service_id === hetznerIds[index]
-                    ); 
-                await actGetServiceData();
-                message_send={
-                    files: [attachment],
-                    content: 
-                    `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
-                    components: [getRow(index)],
-                    flags: MessageFlags.Ephemeral,
+                if (i.customId === 'set-alert') {
+                    const alert_reply = {
+                        content:` **Copy paste** this command and set a **price**:\n\`\`\`/set-alert service_id:${act_sel_service.service_id} price:\`\`\`\n-# - **${package.displayName} ${package.version}**`,
+                        flags: MessageFlags.Ephemeral
+                    }
+                    await interaction.followUp(alert_reply);
+                    await i.update(message_send);
+                } else {
+                    if (i.customId === 'next') index++;
+                    if (i.customId === 'previous') index--;
+                
+                    index = Math.max(0, Math.min(results.length - 1, index));
+                    chartBuffer = generatePriceChart(response.result[index]);
+                    attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
+                    act_sel_service = av_services.find(
+                        service => service.service_id === hetznerIds[index]
+                        ); 
+                    await actGetServiceData();
+                    message_send={
+                        files: [attachment],
+                        content: 
+                        `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
+                        components: [getRow(index)],
+                        flags: MessageFlags.Ephemeral,
+                    }
+                    await i.update(message_send);//editReply
                 }
-                await i.update(message_send);//editReply
             });
 
             collector.on('end', async () => {

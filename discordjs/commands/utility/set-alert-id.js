@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
 const { UpdateAlert } = require("../../mongo/mongo-db-connect");
@@ -6,7 +6,7 @@ const { UpdateAlert } = require("../../mongo/mongo-db-connect");
 
 const builder = new SlashCommandBuilder()
     .setName('set-alert')
-    .setDescription('Provides the most recent service information for a given component ID.')
+    .setDescription('Set an alert based on service id and desired price.')
     .addNumberOption(option =>
         option.setName('service_id')
             .setDescription('Service_id')
