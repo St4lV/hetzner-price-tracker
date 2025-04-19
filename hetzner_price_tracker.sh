@@ -90,12 +90,18 @@ case "$1" in
     find . -type f ! -name "*.bak" -delete
     curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
     unzip hetzner_price_tracker.zip -d ../
+    rm hetzner_price_tracker.zip
     mv discordjs/config.json.bak discordjs/config.json
     mv express/config.json.bak express/config.json
     chmod +x hetzner_price_tracker.sh
     docker-compose down
     docker container prune -f
     docker image prune -f
+    cd express
+    docker build -t hpt_back .
+    cd ../discordjs
+    docker build -t hpt_bot .
+    cd ../
     echo "Updated successfully"
     ./hetzner_price_tracker.sh start
     ;;
