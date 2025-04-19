@@ -92,6 +92,7 @@ case "$1" in
     unzip hetzner_price_tracker.zip -d ../
     mv discordjs/config.json.bak discordjs/config.json
     mv express/config.json.bak express/config.json
+    chmod +x hetzner_price_tracker.sh
     docker-compose down
     docker container prune -f
     docker image prune -f
