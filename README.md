@@ -13,15 +13,15 @@ Commission made for [luc13680as](https://github.com/luc13680as) , still in devel
 ```bash
     apt update
     apt install jq unzip
-    mkdir /var/hetzner_price_tracker
-    cd /var/hetzner_price_tracker
-    curl -L -o hetzner-price-tracker-main.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
-    unzip hetzner-price-tracker-main.zip
+    cd /var
+    curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
+    unzip hetzner_price_tracker.zip -d ../hetzner_price_tracker/
 ```
 
 ### Once it's downloaded :
 
 ```bash
+cd hetzner_price_tracker
 chmod +x hetzner_price_tracker.sh
 ./hetzner_price_tracker.sh install
 ```

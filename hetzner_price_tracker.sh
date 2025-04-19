@@ -87,8 +87,8 @@ case "$1" in
     ;;
   update)
     # supprimer tout les fichiers sauf /config
-    curl -L -o https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
-    unzip hetzner-price-tracker-main.zip -d ./hetzner_price_tracker/
+    curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
+    unzip hetzner_price_tracker.zip -d ../hetzner_price_tracker/
 
     echo "Updating..."
     ;;
