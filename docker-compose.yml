@@ -10,7 +10,6 @@ services:
     restart: unless-stopped
 
   discordjs:
-    build:
     image: hpt_bot
     container_name: hetzner_price_tracker_bot
     networks:
