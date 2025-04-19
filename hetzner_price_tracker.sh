@@ -95,21 +95,21 @@ case "$1" in
     ;;
   start)
     echo "Starting..."
-    cd express
-    docker build -t hpt_back .
-    cd ../discordjs
-    docker build -t hpt_bot .
-    cd ../
-    docker compose up
+    docker-compose up
     ;;
   stop)
     echo "Stopping..."
     ;;
   install)
     echo "Installing HetznerServicePriceTracker.."
-
+    apt install docker docker-compose
     ./hetzner_price_tracker.sh config express
     ./hetzner_price_tracker.sh config discordjs
+    cd express
+    docker build -t hpt_back .
+    cd ../discordjs
+    docker build -t hpt_bot .
+    cd ../
     ./hetzner_price_tracker.sh start
     ;;
   *)
