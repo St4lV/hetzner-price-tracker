@@ -84,12 +84,14 @@ case "$1" in
     esac
     ;;
   update)
-      echo "Updating..."
-    # renommer les config.json en config.json.bak
-    # supprimer tout les fichiers qui ne sont pas .bak
+    echo "Updating..."
+    mv discordjs/config.json discordjs/config.json.bak
+    mv express/config.json express/config.json.bak
+    find . -type f ! -name "*.bak" -delete
     curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
     unzip hetzner_price_tracker.zip -d ../
-    # renommer les config.json.bak en config.json
+    mv discordjs/config.json.bak discordjs/config.json
+    mv express/config.json.bak express/config.json
     docker-compose down
     docker container prune -f
     docker image prune -f
