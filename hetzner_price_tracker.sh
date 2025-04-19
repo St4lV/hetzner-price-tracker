@@ -101,9 +101,9 @@ case "$1" in
   install)
     echo "Installing HetznerServicePriceTracker.."
 
-    hetzner_price_tracker.sh config express
-    hetzner_price_tracker.sh config discordjs
-    hetzner_price_tracker.sh start
+    ./hetzner_price_tracker.sh config express
+    ./hetzner_price_tracker.sh config discordjs
+    ./hetzner_price_tracker.sh start
     ;;
   *)
     echo "Usage : $0 {config|start|stop|install|update}"
