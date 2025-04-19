@@ -90,6 +90,9 @@ case "$1" in
     curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
     unzip hetzner_price_tracker.zip -d ../
     # renommer les config.json.bak en config.json
+    docker-compose down
+    docker container prune -f
+    docker image prune -f
     echo "Updated successfully"
     ./hetzner_price_tracker.sh start
     ;;
@@ -99,6 +102,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping..."
+    docker-compose down
     ;;
   install)
     echo "Installing HetznerServicePriceTracker.."

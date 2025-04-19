@@ -7,6 +7,7 @@ services:
       - app_network
     expose:
       - "3000"
+    restart: unless-stopped
 
   discordjs:
     build:
@@ -14,6 +15,7 @@ services:
     container_name: hetzner_price_tracker_bot
     networks:
       - app_network
+    restart: unless-stopped
 
 networks:
   app_network:
