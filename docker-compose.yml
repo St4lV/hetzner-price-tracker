@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  express-backend:
+    image: hpt_back
+    container_name: hetzner_price_tracker_backend
+    networks:
+      - app_network
+    expose:
+      - "3000"
+
+  discordjs:
+    build:
+    image: hpt_bot
+    container_name: hetzner_price_tracker_bot
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

@@ -50,8 +50,6 @@ case "$1" in
             read -p "Mongo host : " mongo_host
             read -p "Mongo port : " mongo_port
             read -p "Mongo database : " mongo_db
-            echo "# BACKEND"
-            read -p "express address http://host:port : " backend_address
             echo "# BOT config :"
             read -p "Token : " token
             read -p "Client Id : " clientId
@@ -69,7 +67,7 @@ case "$1" in
                 mongo_host: $mg_host,
                 mongo_port: $mg_port,
                 mongo_db: $mg_db,
-                backend_address: $back_url,
+                backend_address: http://express:3000 ,
                 token: $tkn,
                 clientId: $cId,
                 guildId: $gId
@@ -86,14 +84,23 @@ case "$1" in
     esac
     ;;
   update)
-    # supprimer tout les fichiers sauf /config
+      echo "Updating..."
+    # renommer les config.json en config.json.bak
+    # supprimer tout les fichiers qui ne sont pas .bak
     curl -L -o hetzner_price_tracker.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
-    unzip hetzner_price_tracker.zip -d ../hetzner_price_tracker/
-
-    echo "Updating..."
+    unzip hetzner_price_tracker.zip -d ../
+    # renommer les config.json.bak en config.json
+    echo "Updated successfully"
+    ./hetzner_price_tracker.sh start
     ;;
   start)
     echo "Starting..."
+    cd express
+    docker build -t hpt_back
+    cd ../discordjs
+    docker build -t hpt_bot
+    cd ../
+    docker compose up
     ;;
   stop)
     echo "Stopping..."

@@ -1,7 +1,7 @@
 FROM node:slim
 
 WORKDIR /discordjs
-COPY package*.json ./
+COPY . .
 
 RUN npm install
 

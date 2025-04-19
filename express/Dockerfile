@@ -1,8 +1,7 @@
 FROM node:slim
 
 WORKDIR /express
-COPY package*.json ./
-
+COPY . .
 RUN npm install
 
 ENV PORT=3000
