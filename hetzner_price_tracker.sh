@@ -67,7 +67,7 @@ case "$1" in
                 mongo_host: $mg_host,
                 mongo_port: $mg_port,
                 mongo_db: $mg_db,
-                backend_address: "http://express:3000",
+                backend_address: "http://172.17.0.1:3000",
                 token: $tkn,
                 clientId: $cId,
                 guildId: $gId
