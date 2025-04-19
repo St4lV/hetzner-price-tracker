@@ -18,7 +18,7 @@ function generatePriceChart(result) {
     ctx.fillRect(0, 0, width, height);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = '24px sans-serif';
+    ctx.font = '24px DejaVu Sans", sans-serif';
     ctx.fillText(`${result.id} :`, 20, 40);
 
     const margin = { top: 60, right: 60, bottom: 60, left: 150 };
@@ -38,7 +38,7 @@ function generatePriceChart(result) {
 
     ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1;
-    ctx.font = '16px sans-serif';
+    ctx.font = '16px "DejaVu Sans", sans-serif';
     ctx.fillStyle = '#aaaaaa';
 
     for (let price = minPrice; price <= maxPrice; price += 10) {
@@ -75,13 +75,13 @@ const lastMinY = margin.top + ((maxPrice - lastMinPrice) / (maxPrice - minPrice)
     ctx.stroke();
 
     ctx.fillStyle = '#ffaaaa';
-    ctx.font = '16px sans-serif';
+    ctx.font = '16px "DejaVu Sans", sans-serif';
     ctx.fillText(`${lastMinPrice.toFixed(2)} €`, margin.left - 120, lastMinY + 5);
 
 
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.font = '16px sans-serif';
+    ctx.font = '16px "DejaVu Sans", sans-serif';
     const steps = 4;
     for (let i = 0; i <= steps; i++) {
         const t = minTime + ((maxTime - minTime) * i) / steps;
