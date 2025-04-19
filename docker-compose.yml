@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  express-backend:
+  express:
     image: hpt_back
     container_name: hetzner_price_tracker_backend
     networks:
