@@ -15,7 +15,7 @@ Commission made for [luc13680as](https://github.com/luc13680as) , still in devel
     apt install jq unzip
     mkdir var/hetzner_price_tracker
     cd var/hetzner_price_tracker
-    curl -L -o https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
+    curl -L -o hetzner-price-tracker-main.zip https://github.com/St4lV/hetzner-price-tracker/archive/refs/heads/main.zip
     unzip hetzner-price-tracker-main.zip
 ```
 
