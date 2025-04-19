@@ -67,7 +67,7 @@ case "$1" in
                 mongo_host: $mg_host,
                 mongo_port: $mg_port,
                 mongo_db: $mg_db,
-                backend_address: http://express:3000 ,
+                backend_address: "http://express:3000",
                 token: $tkn,
                 clientId: $cId,
                 guildId: $gId
@@ -96,9 +96,9 @@ case "$1" in
   start)
     echo "Starting..."
     cd express
-    docker build -t hpt_back
+    docker build -t hpt_back .
     cd ../discordjs
-    docker build -t hpt_bot
+    docker build -t hpt_bot .
     cd ../
     docker compose up
     ;;
