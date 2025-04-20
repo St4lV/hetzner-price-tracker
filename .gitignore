@@ -4,7 +4,7 @@ config/config-express.json
 discordjs/node_modules
 discordjs/config.json
 
-.wip
+.backup-prod
 
 express/node_modules
 express/config.json

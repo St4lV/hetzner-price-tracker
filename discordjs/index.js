@@ -82,7 +82,6 @@ client.on(Events.InteractionCreate, async interaction => {
 		const parts = interaction.customId.split(':');
 		const serviceId = parts[1];
 		const alertPrice = parseFloat(parts[2]);
-		console.log(userId)
 		try {
 		await RemoveAlert({
 			body : {

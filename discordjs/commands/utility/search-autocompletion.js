@@ -427,37 +427,34 @@ module.exports = {
             });
             
             collector.on('collect', async i => {
+                if (i.customId === 'next') index++;
+                if (i.customId === 'previous') index--;
+                index = Math.max(0, Math.min(results.length - 1, index));
+                act_sel_service = av_services.find(
+                    service => service.service_id === hetznerIds[index]
+                );
                 if (i.customId === 'set-alert') {
                     const alert_reply = {
-                        content:` **Copy paste** this command and set a **price**:\n\`\`\`/set-alert service_id:${act_sel_service.service_id} price:\`\`\`\n-# - **${package.displayName} ${package.version}**`,
+                        content: `**Copy paste** this command and set a **price**:\n\`\`\`/set-alert service_id:${response.result[index].id} price:\`\`\`\n-# - **${package.displayName} ${package.version}**`,
                         flags: MessageFlags.Ephemeral
-                    }
+                    };
                     await interaction.followUp(alert_reply);
                     await i.update(message_send);
                 } else {
-                    if (i.customId === 'next') index++;
-                    if (i.customId === 'previous') index--;
-                
-                    index = Math.max(0, Math.min(results.length - 1, index));
                     chartBuffer = generatePriceChart(response.result[index]);
                     attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
-                    act_sel_service = av_services.find(
-                        service => service.service_id === hetznerIds[index]
-                        ); 
                     await actGetServiceData();
-                    message_send={
+                    message_send = {
                         files: [attachment],
-                        content: 
-                        `-# page ${index+1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
+                        content:
+                            `-# page ${index + 1}:\n${service_specs}\n-# Cheapests last ${response.result.length} entries for selected config *(parsed from ${hetznerIds.length} services)* \n-# - **${package.displayName} ${package.version}**`,
                         components: [getRow(index)],
                         flags: MessageFlags.Ephemeral,
-                    }
-                    await i.update(message_send);//editReply
+                    };
+                    await i.update(message_send);
                 }
             });
-
             collector.on('end', async () => {
-
             });
         } catch (error){
             console.log(error)
