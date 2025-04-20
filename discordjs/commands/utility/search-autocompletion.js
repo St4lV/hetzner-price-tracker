@@ -438,8 +438,8 @@ module.exports = {
                         content: `**Copy paste** this command and set a **price**:\n\`\`\`/set-alert service_id:${response.result[index].id} price:\`\`\`\n-# - **${package.displayName} ${package.version}**`,
                         flags: MessageFlags.Ephemeral
                     };
-                    await interaction.followUp(alert_reply);
                     await i.update(message_send);
+                    await interaction.followUp(alert_reply);
                 } else {
                     chartBuffer = generatePriceChart(response.result[index]);
                     attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
