@@ -7,7 +7,7 @@ const { backend_address} = require('../../config.json');
 
 const storageFields = Array.from({ length: 4 }, (_, i) => i + 1);
 
-registerFont(path.join(__dirname, 'assets/fonts/OpenSans-Medium.ttf'), {
+registerFont(path.join(__dirname, '../../assets/fonts/OpenSans-Medium.ttf'), {
     family: 'Open Sans'
 });
 
