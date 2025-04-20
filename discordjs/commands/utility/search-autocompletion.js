@@ -1,10 +1,15 @@
 const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas');
+const path = require('path');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
 const { backend_address} = require('../../config.json');
 
 const storageFields = Array.from({ length: 4 }, (_, i) => i + 1);
+
+registerFont(path.join(__dirname, 'assets/fonts/OpenSans-Medium.ttf'), {
+    family: 'Open Sans'
+});
 
 function generatePriceChart(result) {
     const history = result.history;
@@ -18,7 +23,7 @@ function generatePriceChart(result) {
     ctx.fillRect(0, 0, width, height);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = '24px DejaVu Sans", sans-serif';
+    ctx.font = '24px "Open Sans"';
     ctx.fillText(`${result.id} :`, 20, 40);
 
     const margin = { top: 60, right: 60, bottom: 60, left: 150 };
@@ -38,7 +43,7 @@ function generatePriceChart(result) {
 
     ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1;
-    ctx.font = '16px "DejaVu Sans", sans-serif';
+    ctx.font = '16px "Open Sans"';
     ctx.fillStyle = '#aaaaaa';
 
     for (let price = minPrice; price <= maxPrice; price += 10) {
@@ -75,13 +80,13 @@ const lastMinY = margin.top + ((maxPrice - lastMinPrice) / (maxPrice - minPrice)
     ctx.stroke();
 
     ctx.fillStyle = '#ffaaaa';
-    ctx.font = '16px "DejaVu Sans", sans-serif';
+    ctx.font = '16px "Open Sans"';
     ctx.fillText(`${lastMinPrice.toFixed(2)} €`, margin.left - 120, lastMinY + 5);
 
 
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.font = '16px "DejaVu Sans", sans-serif';
+    ctx.font = '16px "Open Sans"';
     const steps = 4;
     for (let i = 0; i <= steps; i++) {
         const t = minTime + ((maxTime - minTime) * i) / steps;
