@@ -5,11 +5,16 @@ const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require(
 const { token } = require('./config.json');
 const package = require('./package.json');
 const { connectDB , SendAlerts, RemoveAlert } = require("./mongo/mongo-db-connect");
+const { getAvailableServices } = require('./cache.js')
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.once(Events.ClientReady, readyClient => {
+	setCache();
 	console.log(`Ready! Logged in as ${readyClient.user.tag} \n### ${package.displayName} ${package.version} ###`);
 });
+async function setCache() {
+	await getAvailableServices()
+}
 client.login(token)
 
 client.commands = new Collection();
@@ -106,6 +111,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 cron.schedule('*/5 * * * *', () => {
 	SendAlerts();
+	setCache();
 })
 
 module.exports = { client };
