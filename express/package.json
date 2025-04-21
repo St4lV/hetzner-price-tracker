@@ -1,16 +1,16 @@
 {
   "name": "hetzner-service-tracker-backend",
   "displayName": "HetznerServiceTrackerBackend",
-  "version": "0.1.5",
-  "main": "index.js",
+  "version": "0.1.6",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "concurrently \"npm run start\" \"cd ../discordjs/ && npm run start\""
   },
   "keywords": [],
-  "author": "",
+  "author": "St4lV",
   "license": "ISC",
-  "description": "",
+  "description": "Express backend used by HetznerServiceTracker discord bot for tracking hetzner server auctions.",
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^5.1.0",

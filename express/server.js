@@ -121,7 +121,7 @@ app.post('/service/get-price-hetzner-ids', async (req, res) => {
 
         const historyQueries = cheapestServices.map(entry =>
             pool.query(
-                `SELECT timestamp, price
+                `SELECT timestamp, price, hetzner_id
                 FROM distinctservicesprices
                 WHERE service_id = $1
                 ORDER BY timestamp DESC`,
@@ -135,11 +135,11 @@ app.post('/service/get-price-hetzner-ids', async (req, res) => {
                         seenPrices.add(row.price);
                         history.push({
                             timestamp: row.timestamp,
-                            price: row.price
+                            price: row.price,
+                            hetzner_id: row.hetzner_id
                         });
                     }
                 }
-        
                 return {
                     id: entry.id,
                     history
@@ -148,7 +148,6 @@ app.post('/service/get-price-hetzner-ids', async (req, res) => {
         );
         
         const result = await Promise.all(historyQueries);
-        
         return res.json({ result });
 
     } catch (error) {

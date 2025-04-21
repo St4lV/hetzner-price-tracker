@@ -1,130 +1,171 @@
 const { SlashCommandBuilder, MessageFlags, ButtonBuilder, ActionRowBuilder, ButtonStyle, ComponentType, AttachmentBuilder } = require('discord.js');
-const { createCanvas, registerFont } = require('canvas');
+const { registerFont } = require('canvas');
 const path = require('path');
 const package = require('../../package.json');
 const { getAvailableServices } = require('../../cache.js')
 const { backend_address} = require('../../config.json');
-
+const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const { Chart } = require('chart.js');
+const annotationPlugin = require('chartjs-plugin-annotation');
 const storageFields = Array.from({ length: 4 }, (_, i) => i + 1);
 
 registerFont(path.join(__dirname, '../../assets/fonts/OpenSans-Medium.ttf'), {
     family: 'Open Sans'
 });
 
-function generatePriceChart(result) {
-    const history = result.history;
+Chart.register(annotationPlugin);
 
-    const width = 800;
-    const height = 400;
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
+const width = 800;
+const height = 500;
+const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour: 'transparent',chartCallback: (ChartJS) => {ChartJS.defaults.font.family = 'Open Sans';}});
 
-    ctx.fillStyle = '#00000000';
-    ctx.fillRect(0, 0, width, height);
+const colorPalette = [
+    '#4e79a7', '#f28e2b', '#962ee6', '#76b7b2',
+    '#59a14f', '#edc949', '#af7aa1', '#ff9da7',
+    '#9c755f', '#bab0ab'
+];
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '24px "Open Sans"';
-    ctx.fillText(`${result.id} :`, 20, 40);
+async function generatePriceChart(result) {
+    const history = [...result.history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const groupedByDate = new Map();
 
-    const margin = { top: 60, right: 60, bottom: 60, left: 150 };
-    const graphWidth = width - margin.left - margin.right;
-    const graphHeight = height - margin.top - margin.bottom;
-
-    const prices = history.map(p => parseFloat(p.price));
-    const timestamps = history.map(p => new Date(p.timestamp).getTime());
-
-    const rawMin = Math.min(...prices);
-    const minPrice = Math.max(0, Math.floor((rawMin-10) / 10) * 10);
-    
-    const maxPrice = Math.ceil(Math.max(...prices) / 10) * 10 + 10;
-
-    const minTime = Math.min(...timestamps);
-    const maxTime = Date.now();
-
-    ctx.strokeStyle = '#444444';
-    ctx.lineWidth = 1;
-    ctx.font = '16px "Open Sans"';
-    ctx.fillStyle = '#aaaaaa';
-
-    for (let price = minPrice; price <= maxPrice; price += 10) {
-        const y = margin.top + ((maxPrice - price) / (maxPrice - minPrice)) * graphHeight;
-
-        ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(width - margin.right, y);
-        ctx.stroke();
-
-        ctx.fillText(`${price.toFixed(2)} €`, margin.left - 60, y + 5);
-    }
-
-    ctx.strokeStyle = '#888888';
-    ctx.beginPath();
-    ctx.moveTo(margin.left, margin.top);
-    ctx.lineTo(margin.left, height - margin.bottom);
-    ctx.lineTo(width - margin.right, height - margin.bottom);
-    ctx.stroke();
-
-const lastTimestamp = Math.max(...timestamps);
-
-const lastDatePrices = history.filter(p => new Date(p.timestamp).getTime() === lastTimestamp);
-
-const lastMinPrice = Math.min(...lastDatePrices.map(p => parseFloat(p.price)));
-
-const lastMinY = margin.top + ((maxPrice - lastMinPrice) / (maxPrice - minPrice)) * graphHeight;
-
-    ctx.strokeStyle = '#ffaaaa';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(margin.left, lastMinY);
-    ctx.lineTo(width - margin.right, lastMinY);
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffaaaa';
-    ctx.font = '16px "Open Sans"';
-    ctx.fillText(`${lastMinPrice.toFixed(2)} €`, margin.left - 120, lastMinY + 5);
-
-
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.font = '16px "Open Sans"';
-    const steps = 4;
-    for (let i = 0; i <= steps; i++) {
-        const t = minTime + ((maxTime - minTime) * i) / steps;
-        const date = new Date(t);
+    for (const item of history) {
+        const date = new Date(item.timestamp);
         const label = `${date.getDate()}/${date.getMonth() + 1}`;
-        const x = margin.left + (i / steps) * graphWidth;
-        ctx.fillText(label, x, height - margin.bottom + 20);
-    }
-    ctx.strokeStyle = '#4e79a7';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    history.forEach((point, i) => {
-        const time = new Date(point.timestamp).getTime();
-        const price = parseFloat(point.price);
-
-        const x = margin.left + ((time - minTime) / (maxTime - minTime)) * graphWidth;
-        const y = margin.top + ((maxPrice - price) / (maxPrice - minPrice)) * graphHeight;
-
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            const prev = history[i - 1];
-            const prevX = margin.left + ((new Date(prev.timestamp).getTime() - minTime) / (maxTime - minTime)) * graphWidth;
-            const prevY = margin.top + ((maxPrice - parseFloat(prev.price)) / (maxPrice - minPrice)) * graphHeight;
-
-            ctx.lineTo(x, prevY);
-            ctx.lineTo(x, y);
+        if (!groupedByDate.has(label)) {
+            groupedByDate.set(label, []);
         }
+        groupedByDate.get(label).push({
+            price: parseFloat(item.price),
+            hetzner_id: item.hetzner_id
+        });
+    }
 
-        ctx.fillStyle = '#4e79a7';
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, 2 * Math.PI);
-        ctx.fill();
+    const now = new Date();
+    const todayLabel = `${now.getDate()}/${now.getMonth() + 1}`;
+    const lastEntry = history[history.length - 1];
+
+    if (!groupedByDate.has(todayLabel)) {
+        groupedByDate.set(todayLabel, [{
+            price: parseFloat(lastEntry.price),
+            hetzner_id: lastEntry.hetzner_id
+        }]);
+    }
+
+    const labels = Array.from(groupedByDate.keys());
+    const hetznerIds = Array.from(new Set(history.map(entry => entry.hetzner_id)));
+
+    const datasets = hetznerIds.map((id, index) => {
+        const data = labels.map(label => {
+            const entries = groupedByDate.get(label) || [];
+            const found = entries.find(e => e.hetzner_id === id);
+            return found ? found.price : null;
+        });
+
+        const latestEntry = [...history].reverse().find(e => e.hetzner_id === id);
+        const latestDate = new Date(latestEntry.timestamp);
+        const dateLabel = `${String(latestDate.getDate()).padStart(2, '0')}/${String(latestDate.getMonth() + 1).padStart(2, '0')}/${String(latestDate.getFullYear()).slice(-2)}`;
+        const price = parseFloat(latestEntry.price).toFixed(2);
+
+        return {
+            label: `${dateLabel} ${price}€`,
+            data,
+            borderColor: colorPalette[index % colorPalette.length],
+            backgroundColor: colorPalette[index % colorPalette.length],
+            pointRadius: 3,
+            stepped: true,
+            tension: 0,
+            spanGaps: true
+        };
     });
-    ctx.stroke();
 
-    return canvas.toBuffer();
+    const todayPrices = groupedByDate.get(todayLabel)?.map(e => e.price) || [];
+    const lastMinPrice = Math.min(...todayPrices);
+
+    datasets.unshift({
+        label: `Latest ${lastMinPrice}€`,
+        data: new Array(labels.length).fill(lastMinPrice),
+        borderColor: '#ffaaaa',
+        borderWidth: 2,
+        pointRadius: 0,
+        borderDash: [5, 5],
+        stepped: true
+    });
+
+    const allPrices = history.map(e => parseFloat(e.price));
+    const minPrice = Math.min(...allPrices);
+    const maxPrice = Math.max(...allPrices);
+    const yMin = Math.floor((minPrice - 20) *0.1) * 10;
+    const yMax = Math.ceil((maxPrice + 20) *0.1) * 10;
+
+    const configuration = {
+        type: 'line',
+        data: {
+            labels,
+            datasets
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Service ID : ${result.id}`,
+                    color: '#ffffff',
+                    font: {
+                        family: 'Open Sans',
+                        size: 18
+                    }
+                },
+                legend: {
+                    labels: {
+                        color: '#ffffff',
+                        font: {
+                            family: 'Open Sans',
+                            size: 14
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#cccccc',
+                        font: {
+                            family: 'Open Sans'
+                        }
+                    },
+                    grid: {
+                        color: '#8c8c8c'
+                    }
+                },
+                y: {
+                    min: yMin,
+                    max: yMax,
+                    ticks: {
+                        stepSize: 10,
+                        color: '#cccccc',
+                        font: {
+                            family: 'Open Sans'
+                        }
+                    },
+                    grid: {
+                        color: '#8c8c8c'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Price (€)',
+                        color: '#ffffff',
+                        font: {
+                            family: 'Open Sans'
+                        }
+                    }
+                }
+            }
+        },
+        plugins: []
+    };
+
+    return await chartJSNodeCanvas.renderToBuffer(configuration);
 }
 
 const builder = new SlashCommandBuilder()
@@ -371,7 +412,7 @@ module.exports = {
                 }
             };
             //console.log(JSON.stringify(response.result[index]))
-            let chartBuffer = generatePriceChart(response.result[index]);
+            let chartBuffer = await generatePriceChart(response.result[index]);
             let attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
             let act_sel_service
             let DC_message
@@ -441,7 +482,7 @@ module.exports = {
                     await i.update(message_send);
                     await interaction.followUp(alert_reply);
                 } else {
-                    chartBuffer = generatePriceChart(response.result[index]);
+                    chartBuffer = await generatePriceChart(response.result[index]);
                     attachment = new AttachmentBuilder(chartBuffer, { name: 'price_chart.png' });
                     await actGetServiceData();
                     message_send = {
