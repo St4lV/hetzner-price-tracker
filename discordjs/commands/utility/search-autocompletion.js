@@ -27,42 +27,17 @@ const colorPalette = [
 
 async function generatePriceChart(result) {
     const history = [...result.history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    const groupedByDate = new Map();
 
-    for (const item of history) {
-        const date = new Date(item.timestamp);
-        const label = `${date.getDate()}/${date.getMonth() + 1}`;
-        if (!groupedByDate.has(label)) {
-            groupedByDate.set(label, []);
-        }
-        groupedByDate.get(label).push({
-            price: parseFloat(item.price),
-            hetzner_id: item.hetzner_id
-        });
-    }
-
-    const now = new Date();
-    const todayLabel = `${now.getDate()}/${now.getMonth() + 1}`;
-    const lastEntry = history[history.length - 1];
-
-    if (!groupedByDate.has(todayLabel)) {
-        groupedByDate.set(todayLabel, [{
-            price: parseFloat(lastEntry.price),
-            hetzner_id: lastEntry.hetzner_id
-        }]);
-    }
-
-    const labels = Array.from(groupedByDate.keys());
     const hetznerIds = Array.from(new Set(history.map(entry => entry.hetzner_id)));
 
     const datasets = hetznerIds.map((id, index) => {
-        const data = labels.map(label => {
-            const entries = groupedByDate.get(label) || [];
-            const found = entries.find(e => e.hetzner_id === id);
-            return found ? found.price : null;
-        });
+        const filtered = history.filter(h => h.hetzner_id === id);
+        const data = filtered.map(entry => ({
+            x: new Date(entry.timestamp).getTime(),
+            y: parseFloat(entry.price)
+        }));
 
-        const latestEntry = [...history].reverse().find(e => e.hetzner_id === id);
+        const latestEntry = filtered[filtered.length - 1];
         const latestDate = new Date(latestEntry.timestamp);
         const dateLabel = `${String(latestDate.getDate()).padStart(2, '0')}/${String(latestDate.getMonth() + 1).padStart(2, '0')}/${String(latestDate.getFullYear()).slice(-2)}`;
         const price = parseFloat(latestEntry.price).toFixed(2);
@@ -79,29 +54,41 @@ async function generatePriceChart(result) {
         };
     });
 
-    const todayPrices = groupedByDate.get(todayLabel)?.map(e => e.price) || [];
-    const lastMinPrice = Math.min(...todayPrices);
+    const allTimestamps = history.map(e => new Date(e.timestamp).getTime());
+    const allPrices = history.map(e => parseFloat(e.price));
+
+    const xMin = Math.min(...allTimestamps);const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nowTs = today.getTime();
+    
+    const lastDataTs = Math.max(...allTimestamps);
+    const xMax = Math.max(lastDataTs, nowTs);
+    const yMin = Math.floor((Math.min(...allPrices) - 20) * 0.1) * 10;
+    const yMax = Math.ceil((Math.max(...allPrices) + 20) * 0.1) * 10;
+
+    const lastTimestamps = hetznerIds.map(id => {
+        const filtered = history.filter(h => h.hetzner_id === id);
+        return filtered[filtered.length - 1];
+    });
+    const lastMinPrice = Math.min(...lastTimestamps.map(e => parseFloat(e.price)));
 
     datasets.unshift({
         label: `Latest ${lastMinPrice}€`,
-        data: new Array(labels.length).fill(lastMinPrice),
+        data: [
+            { x: xMin, y: lastMinPrice },
+            { x: xMax, y: lastMinPrice }
+        ],
         borderColor: '#ffaaaa',
         borderWidth: 2,
         pointRadius: 0,
         borderDash: [5, 5],
-        stepped: true
+        stepped: false,
+        spanGaps: true
     });
-
-    const allPrices = history.map(e => parseFloat(e.price));
-    const minPrice = Math.min(...allPrices);
-    const maxPrice = Math.max(...allPrices);
-    const yMin = Math.floor((minPrice - 20) *0.1) * 10;
-    const yMax = Math.ceil((maxPrice + 20) *0.1) * 10;
 
     const configuration = {
         type: 'line',
         data: {
-            labels,
             datasets
         },
         options: {
@@ -124,11 +111,30 @@ async function generatePriceChart(result) {
                             size: 14
                         }
                     }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (tooltipItems) => {
+                            const ts = tooltipItems[0].parsed.x;
+                            const d = new Date(ts);
+                            return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+                        },
+                        label: (tooltipItem) => {
+                            return `${tooltipItem.dataset.label} : ${tooltipItem.formattedValue}€`;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
+                    type: 'linear',
+                    min: xMin,
+                    max: xMax,
                     ticks: {
+                        callback: function(value) {
+                            const d = new Date(value);
+                            return `${d.getDate()}/${d.getMonth() + 1}`;
+                        },
                         color: '#cccccc',
                         font: {
                             family: 'Open Sans'
