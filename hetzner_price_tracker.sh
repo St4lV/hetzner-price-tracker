@@ -94,7 +94,7 @@ case "$1" in
     mv discordjs/config.json.bak discordjs/config.json
     mv express/config.json.bak express/config.json
     chmod +x hetzner_price_tracker.sh
-    docker-compose down
+    docker compose down
     docker container prune -f
     docker image prune -f
     cd express
@@ -107,15 +107,14 @@ case "$1" in
     ;;
   start)
     echo "Starting..."
-    docker-compose up
+    docker compose up
     ;;
   stop)
     echo "Stopping..."
-    docker-compose down
+    docker compose down
     ;;
   install)
     echo "Installing HetznerServicePriceTracker.."
-    apt install docker docker-compose
     ./hetzner_price_tracker.sh config express
     ./hetzner_price_tracker.sh config discordjs
     cd express
